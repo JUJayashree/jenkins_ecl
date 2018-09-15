@@ -1,0 +1,206 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>This job is created to check ECL file syntax check on pull request created in git account , if errors encountered is greater than zero then make build status as unstable else jenkins build status is successful. and send the comment to pull request. [Note : comment file created using HTML tags]</description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.29.2">
+      <projectUrl>https://github.com/JUJayashree/jenkins_ecl/</projectUrl>
+      <displayName></displayName>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@3.9.1">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <name>origin</name>
+        <url>https://github.com/JUJayashree/jenkins_ecl.git</url>
+        <credentialsId>72229967-3ce7-48c3-9985-88c30b9ebc8d</credentialsId>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>*/master</name>
+      </hudson.plugins.git.BranchSpec>
+      <hudson.plugins.git.BranchSpec>
+        <name>${sha1}</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions/>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers>
+    <org.jenkinsci.plugins.ghprb.GhprbTrigger plugin="ghprb@1.42.0">
+      <spec>H/5 * * * *</spec>
+      <configVersion>3</configVersion>
+      <adminlist></adminlist>
+      <allowMembersOfWhitelistedOrgsAsAdmin>false</allowMembersOfWhitelistedOrgsAsAdmin>
+      <orgslist></orgslist>
+      <cron>H/5 * * * *</cron>
+      <buildDescTemplate></buildDescTemplate>
+      <onlyTriggerPhrase>false</onlyTriggerPhrase>
+      <useGitHubHooks>true</useGitHubHooks>
+      <permitAll>false</permitAll>
+      <whitelist>JUJayashree</whitelist>
+      <autoCloseFailedPullRequests>false</autoCloseFailedPullRequests>
+      <displayBuildErrorsOnDownstreamBuilds>false</displayBuildErrorsOnDownstreamBuilds>
+      <whiteListTargetBranches>
+        <org.jenkinsci.plugins.ghprb.GhprbBranch>
+          <branch></branch>
+        </org.jenkinsci.plugins.ghprb.GhprbBranch>
+      </whiteListTargetBranches>
+      <blackListTargetBranches>
+        <org.jenkinsci.plugins.ghprb.GhprbBranch>
+          <branch></branch>
+        </org.jenkinsci.plugins.ghprb.GhprbBranch>
+      </blackListTargetBranches>
+      <gitHubAuthId>5e8e8275-85c8-420b-a9a3-5828c4211cf3</gitHubAuthId>
+      <triggerPhrase></triggerPhrase>
+      <skipBuildPhrase>.*\[skip\W+ci\].*</skipBuildPhrase>
+      <blackListCommitAuthor></blackListCommitAuthor>
+      <blackListLabels></blackListLabels>
+      <whiteListLabels></whiteListLabels>
+      <includedRegions></includedRegions>
+      <excludedRegions></excludedRegions>
+      <extensions>
+        <org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildStatus>
+          <messages>
+            <org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildResultMessage>
+              <message>Build Status: SUCCESS
+Job name : $JOB_NAME
+Build_log : $BUILD_URL</message>
+              <result>SUCCESS</result>
+            </org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildResultMessage>
+            <org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildResultMessage>
+              <message>Build Status: FAILURE
+Job name :  $JOB_NAME
+Build_log :  $BUILD_URL
+</message>
+              <result>FAILURE</result>
+            </org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildResultMessage>
+          </messages>
+        </org.jenkinsci.plugins.ghprb.extensions.comments.GhprbBuildStatus>
+        <org.jenkinsci.plugins.ghprb.extensions.comments.GhprbCommentFile>
+          <commentFilePath>/var/lib/jenkins/workspace/pr_buildstatus_comment2/jenkin_pr_comment.log</commentFilePath>
+        </org.jenkinsci.plugins.ghprb.extensions.comments.GhprbCommentFile>
+        <org.jenkinsci.plugins.ghprb.extensions.status.GhprbSimpleStatus>
+          <commitStatusContext></commitStatusContext>
+          <triggeredStatus></triggeredStatus>
+          <startedStatus></startedStatus>
+          <statusUrl></statusUrl>
+          <addTestResults>false</addTestResults>
+        </org.jenkinsci.plugins.ghprb.extensions.status.GhprbSimpleStatus>
+      </extensions>
+    </org.jenkinsci.plugins.ghprb.GhprbTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>#!/bin/bash
+
+
+QUERY_PATH=&quot;/var/lib/jenkins/workspace/pr_buildstatus_comment2/&quot;
+COMMENT_LOG_PATH=&quot;/var/lib/jenkins/workspace/pr_buildstatus_comment2/pr_buildstatus_comment.log&quot;
+
+
+if [ -f $COMMENT_LOG_PATH ]; then
+    rm $COMMENT_LOG_PATH
+fi
+
+echo &quot;Automated ECL syntax check :&quot;$&apos;\n&apos; &gt;&gt; $COMMENT_LOG_PATH
+#Execute ECL queries
+for ecl_file in $( find $QUERY_PATH -iname &quot;*.ecl&quot;)
+do
+    if [ -f &quot;$ecl_file&quot; ]; then
+		#eclcc -syntax &quot;$ecl_file&quot; 2&gt;&gt; $COMMENT_LOG_PATH | &gt;1
+      echo &quot;.&quot; 
+   fi
+done
+
+cat $COMMENT_LOG_PATH
+
+error=0
+warning=0
+while read line  
+do
+	if [[ $line =~ &quot; error &quot; ]]; then
+		error=`expr $error + 1`
+	fi
+	if [[ $line =~ &quot; warning &quot; ]]; then
+		warning=`expr $warning + 1`
+	fi
+	
+done &lt; $COMMENT_LOG_PATH
+echo &quot;Errors=&quot; $error
+echo &quot;warnings=&quot; $warning
+
+
+echo &quot;&lt;table style=&quot;width:100%&quot;&gt;
+  &lt;tr&gt;
+    &lt;th&gt;Test&lt;/th&gt;
+    &lt;th&gt;Errors&lt;/th&gt; 
+    &lt;th&gt;Warnings&lt;/th&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;syntax check&lt;/td&gt;
+    &lt;td&gt;$error&lt;/td&gt; 
+    &lt;td&gt;$warning&lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;&quot; &gt; jenkin_pr_comment.log
+
+
+if [ &quot;$error&quot; -eq 0 ]; then
+	exit 0
+else 
+	echo &quot;Error Details: &lt;a href=&quot;${BUILD_URL}console&quot;&gt;Click here&lt;/a&gt; &quot; &gt;&gt;jenkin_pr_comment.log
+	exit 1
+fi
+</command>
+    </hudson.tasks.Shell>
+    <hudson.plugins.parameterizedtrigger.TriggerBuilder plugin="parameterized-trigger@2.35.2">
+      <configs>
+        <hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig>
+          <configs class="empty-list"/>
+          <projects>Build_after_sc1</projects>
+          <condition>ALWAYS</condition>
+          <triggerWithNoParameters>false</triggerWithNoParameters>
+          <triggerFromChildProjects>false</triggerFromChildProjects>
+          <block>
+            <buildStepFailureThreshold>
+              <name>FAILURE</name>
+              <ordinal>2</ordinal>
+              <color>RED</color>
+              <completeBuild>true</completeBuild>
+            </buildStepFailureThreshold>
+            <unstableThreshold>
+              <name>UNSTABLE</name>
+              <ordinal>1</ordinal>
+              <color>YELLOW</color>
+              <completeBuild>true</completeBuild>
+            </unstableThreshold>
+            <failureThreshold>
+              <name>FAILURE</name>
+              <ordinal>2</ordinal>
+              <color>RED</color>
+              <completeBuild>true</completeBuild>
+            </failureThreshold>
+          </block>
+          <buildAllNodesWithLabel>false</buildAllNodesWithLabel>
+        </hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.TriggerBuilder>
+  </builders>
+  <publishers/>
+  <buildWrappers>
+    <hudson.plugins.ws__cleanup.PreBuildCleanup plugin="ws-cleanup@0.34">
+      <deleteDirs>false</deleteDirs>
+      <cleanupParameter></cleanupParameter>
+      <externalDelete></externalDelete>
+    </hudson.plugins.ws__cleanup.PreBuildCleanup>
+  </buildWrappers>
+</project>
