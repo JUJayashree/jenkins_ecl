@@ -1,0 +1,154 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>This job is created to check for the syntax of the ECL files which are changed on pull Request and to send the results of syntax check as comment to pull request . &#xd;
+</description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.29.2">
+      <projectUrl>https://github.com/JUJayashree/jenkins_ecl/</projectUrl>
+      <displayName></displayName>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@3.9.1">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <name>origin</name>
+        <refspec>+refs/pull/*:refs/remote/origin/pr/*</refspec>
+        <url>https://github.com/JUJayashree/jenkins_ecl.git</url>
+        <credentialsId>272c2e65-9429-4591-a4fa-5bfbac438d8d</credentialsId>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>*/master</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions/>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers>
+    <org.jenkinsci.plugins.ghprb.GhprbTrigger plugin="ghprb@1.42.0">
+      <spec>H/5 * * * *</spec>
+      <configVersion>3</configVersion>
+      <adminlist></adminlist>
+      <allowMembersOfWhitelistedOrgsAsAdmin>false</allowMembersOfWhitelistedOrgsAsAdmin>
+      <orgslist></orgslist>
+      <cron>H/5 * * * *</cron>
+      <buildDescTemplate></buildDescTemplate>
+      <onlyTriggerPhrase>false</onlyTriggerPhrase>
+      <useGitHubHooks>true</useGitHubHooks>
+      <permitAll>false</permitAll>
+      <whitelist>JUJayashree</whitelist>
+      <autoCloseFailedPullRequests>false</autoCloseFailedPullRequests>
+      <displayBuildErrorsOnDownstreamBuilds>false</displayBuildErrorsOnDownstreamBuilds>
+      <whiteListTargetBranches>
+        <org.jenkinsci.plugins.ghprb.GhprbBranch>
+          <branch></branch>
+        </org.jenkinsci.plugins.ghprb.GhprbBranch>
+      </whiteListTargetBranches>
+      <blackListTargetBranches>
+        <org.jenkinsci.plugins.ghprb.GhprbBranch>
+          <branch></branch>
+        </org.jenkinsci.plugins.ghprb.GhprbBranch>
+      </blackListTargetBranches>
+      <gitHubAuthId>5e8e8275-85c8-420b-a9a3-5828c4211cf3</gitHubAuthId>
+      <triggerPhrase></triggerPhrase>
+      <skipBuildPhrase>.*\[skip\W+ci\].*</skipBuildPhrase>
+      <blackListCommitAuthor></blackListCommitAuthor>
+      <blackListLabels></blackListLabels>
+      <whiteListLabels></whiteListLabels>
+      <includedRegions></includedRegions>
+      <excludedRegions></excludedRegions>
+      <extensions>
+        <org.jenkinsci.plugins.ghprb.extensions.comments.GhprbCommentFile>
+          <commentFilePath>/home/jenkins/scripts/pr_git_changed.log</commentFilePath>
+        </org.jenkinsci.plugins.ghprb.extensions.comments.GhprbCommentFile>
+        <org.jenkinsci.plugins.ghprb.extensions.status.GhprbSimpleStatus>
+          <commitStatusContext></commitStatusContext>
+          <triggeredStatus></triggeredStatus>
+          <startedStatus></startedStatus>
+          <statusUrl></statusUrl>
+          <addTestResults>false</addTestResults>
+        </org.jenkinsci.plugins.ghprb.extensions.status.GhprbSimpleStatus>
+      </extensions>
+    </org.jenkinsci.plugins.ghprb.GhprbTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>#!/bin/bash
+
+COMMENT_LOG_PATH2=&quot;/home/jenkins/scripts/pr_git_changed.log&quot;
+
+WORKSPACE=&quot;/var/lib/jenkins/workspace/pr_git_changed&quot;
+
+
+if [ -f $COMMENT_LOG_PATH2 ]; then
+    rm $COMMENT_LOG_PATH2
+fi
+
+
+cd $WORKSPACE
+ecl=&quot;.*\w+.ecl&quot;
+
+echo &quot; SYNTAX CHECK ON CHANGED FILES &quot; &gt;&gt; $COMMENT_LOG_PATH2
+
+for ecl_file in $( git diff --name-only $GIT_PREVIOUS_COMMIT $GIT_COMMIT | xargs )
+do
+	echo &quot;$ecl_file&quot;
+      
+	if [[ $ecl_file =~ $ecl ]]; then
+	
+       		eclcc -syntax $ecl_file 2&gt;&gt; $COMMENT_LOG_PATH2
+	fi
+
+done
+
+error=0
+warning=0
+while read line  
+do
+	if [[ $line =~ &quot; error &quot; ]]; then
+		error=`expr $error + 1`
+	fi
+	if [[ $line =~ &quot; warning &quot; ]]; then
+		warning=`expr $warning + 1`
+	fi
+	
+done &lt; $COMMENT_LOG_PATH2
+
+echo &quot;********************************************************&quot;&gt;&gt; $COMMENT_LOG_PATH2
+echo &quot;Total Errors=&quot; $error &gt;&gt; $COMMENT_LOG_PATH2
+echo &quot;Total warnings=&quot; $warning &gt;&gt; $COMMENT_LOG_PATH2
+echo &quot;*********************************************************&quot; &gt;&gt; $COMMENT_LOG_PATH2
+
+</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <org.jvnet.hudson.plugins.groovypostbuild.GroovyPostbuildRecorder plugin="groovy-postbuild@2.4.1">
+      <script plugin="script-security@1.44">
+        <script>build = manager.build.result
+url = manager.build.url
+File file = new File(&apos;/home/jenkins/scripts/pr_git_changed.log&apos;)
+
+def lines = file.readLines()
+lines = lines.plus(1, &apos;Build Status ::&apos; + build)
+file.text = lines.join(&apos;\n\n&apos;)
+lines = lines.plus(2, &apos;Build URL ::&apos; + url)
+file.text = lines.join(&apos;\n\n&apos;)</script>
+        <sandbox>false</sandbox>
+      </script>
+      <behavior>0</behavior>
+      <runForMatrixParent>false</runForMatrixParent>
+    </org.jvnet.hudson.plugins.groovypostbuild.GroovyPostbuildRecorder>
+  </publishers>
+  <buildWrappers/>
+</project>
